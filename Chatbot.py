@@ -1,29 +1,53 @@
 import openai
 import streamlit as st
+import logging
 
-with st.sidebar:
-    openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
-    "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
-    "[View the source code](https://github.com/streamlit/llm-examples/blob/main/Chatbot.py)"
-    "[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/streamlit/llm-examples?quickstart=1)"
+st.set_page_config(page_title="🦜🔗 Midheaven Beta Chatbot")
+st.title('🦜🔗 Midheaven Beta Chatbot')
 
-st.title("💬 Chatbot")
-st.caption("🚀 A streamlit chatbot powered by OpenAI LLM")
+openai_api_key = st.sidebar.text_input('OpenAI API Key')
+openai.api_key = openai_api_key
+
+# Session state ayarları
+if "openai_model" not in st.session_state:
+    st.session_state["openai_model"] = "gpt-4"
+
 if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+    st.session_state.messages = []
 
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+# Mevcut mesajları göster
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-if prompt := st.chat_input():
-    if not openai_api_key:
-        st.info("Please add your OpenAI API key to continue.")
-        st.stop()
-
-    openai.api_key = openai_api_key
+# Kullanıcıdan yeni bir mesaj al
+if prompt := st.chat_input("Yazmak için tıklayınız."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    st.chat_message("user").write(prompt)
-    response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=st.session_state.messages)
-    msg = response.choices[0].message
-    st.session_state.messages.append(msg)
-    st.chat_message("assistant").write(msg.content)
+
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+
+        # "system" mesajını ve kullanıcı mesajlarını birleştir
+        combined_messages = [{"role": "system", "content": "Senin ismin  Midheaven Astroloji Kişisel Chatbot. Biri sana ismini sorarsa benim ismin Midheaven demelisin."}] + \
+                            [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+
+        # API çağrısını güncelle
+        try:
+            for response in openai.ChatCompletion.create(
+                model=st.session_state["openai_model"],
+                messages=combined_messages,
+                max_tokens=800,
+                stream=True
+            ):
+                full_response += response.choices[0].delta.get("content", "")
+                message_placeholder.markdown(full_response + "▌")
+        except Exception as e:
+            full_response = str(e)
+
+        # Nihai yanıtı göster
+        message_placeholder.markdown(full_response)
+        st.session_state.messages.append({"role": "assistant", "content": full_response})

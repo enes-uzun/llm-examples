@@ -15,7 +15,7 @@ def create_openai_object_sync(response: str, role: str = "assistant") -> OpenAIO
     return obj
 
 
-@patch("openai.ChatCompletion.create")
+@patch("openai.resources.chat.Completions.create")
 def test_Chatbot(openai_create):
     at = AppTest.from_file("Chatbot.py").run()
     assert not at.exception
