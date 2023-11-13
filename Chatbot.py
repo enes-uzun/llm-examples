@@ -1,13 +1,12 @@
-import os
-os.system("openai migrate")
 import openai
 import streamlit as st
-import logging
+import os
 
 st.set_page_config(page_title="🦜🔗 Midheaven Beta Chatbot")
 st.title('🦜🔗 Midheaven Beta Chatbot')
 
-openai_api_key = st.sidebar.text_input('OpenAI API Key')
+# API anahtarını ortam değişkenlerinden al
+openai_api_key = os.getenv('OPENAI_API_KEY')
 openai.api_key = openai_api_key
 
 # Session state ayarları
@@ -33,22 +32,20 @@ if prompt := st.chat_input("Yazmak için tıklayınız."):
         message_placeholder = st.empty()
         full_response = ""
 
-        # "system" mesajını ve kullanıcı mesajlarını birleştir
+        # Sistem ve kullanıcı mesajlarını birleştir
         combined_messages = [{"role": "system", "content": "Senin ismin  Midheaven Astroloji Kişisel Chatbot. Biri sana ismini sorarsa benim ismin Midheaven demelisin."}] + \
                             [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
 
-        # API çağrısını güncelle
+        # API çağrısını yap
         try:
-            for response in openai.ChatCompletion.create(
+            response = openai.ChatCompletion.create(
                 model=st.session_state["openai_model"],
                 messages=combined_messages,
-                max_tokens=800,
-                stream=True
-            ):
-                full_response += response.choices[0].delta.get("content", "")
-                message_placeholder.markdown(full_response + "▌")
+                max_tokens=800
+            )
+            full_response = response.choices[0].text.strip()
         except Exception as e:
-            full_response = str(e)
+            full_response = f"Bir hata oluştu: {str(e)}"
 
         # Nihai yanıtı göster
         message_placeholder.markdown(full_response)
