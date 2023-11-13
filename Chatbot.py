@@ -1,5 +1,5 @@
 import os
-os.system("pip install openai==0.28")
+os.system("openai migrate")
 import openai
 import streamlit as st
 import logging
