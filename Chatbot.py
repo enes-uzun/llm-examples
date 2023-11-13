@@ -1,8 +1,9 @@
+import os
+os.system("pip install openai==0.28")
 import openai
 import streamlit as st
 import logging
-import os
-os.system("pip install openai==0.28")
+
 st.set_page_config(page_title="🦜🔗 Midheaven Beta Chatbot")
 st.title('🦜🔗 Midheaven Beta Chatbot')
 
